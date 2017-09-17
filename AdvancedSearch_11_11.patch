@@ -1,0 +1,811 @@
+Index: Controllers/AccountController.cs
+===================================================================
+--- Controllers/AccountController.cs	(revision 119675)
++++ Controllers/AccountController.cs	(working copy)
+@@ -40,6 +40,9 @@
+ using DurationUnit = AtHoc.Utilities.DurationUnit;
+ using Scenario = AtHoc.IWS.Business.Domain.Entities.Scenario;
+ using AtHoc.IWS.Business.Domain.Users.Search;
++using AtHoc.Infrastructure.Serialization;
++using AtHoc.IWS.Map;
++using AtHoc.Infrastructure;
+ 
+ namespace AtHoc.IWS.Web.Controllers
+ {
+@@ -58,7 +61,7 @@
+         private readonly ICustomAttributeFacade _customAttributeFacade;
+         private readonly IAccountabilityFacade _accountabilityFacade;
+         private readonly IUserManagerHelper _userManagerHelper;
+-        public AccountController(IAccountabilityFacade accountabiltyFacade, IUserManagerHelper userManagerHelper,IAccountabilityFacade accountabilityFacade,IUserFacade userFacade, ICustomAttributeFacade customAttributeFacade, IScenarioFacade scenarioFacade, ILogService logService, IPlaceHolderFacade placeholderFacade, IPublishingDomainToModel publishingDomainToModel, IPublishingModelToDomain publishingModelToDomain, IAlertFacade alertFacade, IPublishingFacade publishingFacade, IOperatorDetailsFacade operatorDetailsFacade)
++        public AccountController(IAccountabilityFacade accountabiltyFacade, IUserManagerHelper userManagerHelper, IAccountabilityFacade accountabilityFacade, IUserFacade userFacade, ICustomAttributeFacade customAttributeFacade, IScenarioFacade scenarioFacade, ILogService logService, IPlaceHolderFacade placeholderFacade, IPublishingDomainToModel publishingDomainToModel, IPublishingModelToDomain publishingModelToDomain, IAlertFacade alertFacade, IPublishingFacade publishingFacade, IOperatorDetailsFacade operatorDetailsFacade)
+         {
+             _accountabiltyFacade = accountabiltyFacade;
+             _scenarioFacade = scenarioFacade;
+@@ -77,7 +80,7 @@
+ 
+         #region Templates
+ 
+-    //    [IWSAuthorize(new[] { SystemObject.AccountabilityTemplate }, new[] { ActionType.View })]
++        //    [IWSAuthorize(new[] { SystemObject.AccountabilityTemplate }, new[] { ActionType.View })]
+         public ActionResult Index()
+         {
+             if (!RuntimeContext.Provider.FeatureMatrix.IsAccountabilitySupported)
+@@ -95,7 +98,7 @@
+         }
+ 
+ 
+-     //   [IWSAuthorize(new[] { SystemObject.AccountabilityTemplate }, new[] { ActionType.View })]
++        //   [IWSAuthorize(new[] { SystemObject.AccountabilityTemplate }, new[] { ActionType.View })]
+         public ActionResult Templates()
+         {
+             if (!RuntimeContext.Provider.FeatureMatrix.IsAccountabilitySupported)
+@@ -122,7 +125,7 @@
+             return View("Templates");
+         }
+ 
+-     //   [IWSAuthorize(new[] { SystemObject.AccountabilityTemplate, SystemObject.AccountabilityEvent }, new[] { ActionType.View, ActionType.Publish })]
++        //   [IWSAuthorize(new[] { SystemObject.AccountabilityTemplate, SystemObject.AccountabilityEvent }, new[] { ActionType.View, ActionType.Publish })]
+         public JsonResult GetTemplates(AccountabilityTemplateSpec spec)
+         {
+             try
+@@ -153,7 +156,7 @@
+             }
+         }
+ 
+-   //     [IWSAuthorize(new[] { SystemObject.AccountabilityTemplate }, new[] { ActionType.View })]
++        //     [IWSAuthorize(new[] { SystemObject.AccountabilityTemplate }, new[] { ActionType.View })]
+         public JsonResult GetTemplate(int id = 0)
+         {
+             try
+@@ -178,7 +181,7 @@
+                     tm.AlertBaseModel.ScenarioSettings.Content.DropboxEnabled = false;
+                 }
+                 tm.ProcessSectionModel.EventPlaceholderList = _placeholderFacade.GetEventPlaceholders(provider.BaseLocale).ToList();
+-                return Json(new { Success = true, Messages = "Error", Data=tm });                                
++                return Json(new { Success = true, Messages = "Error", Data = tm });
+ 
+             }
+             catch (Exception ex)
+@@ -188,7 +191,7 @@
+             }
+         }
+ 
+-   //     [IWSAuthorize(new[] { SystemObject.AccountabilityTemplate }, new[] { ActionType.View })]
++        //     [IWSAuthorize(new[] { SystemObject.AccountabilityTemplate }, new[] { ActionType.View })]
+         public JsonResult GetEventFromTemplate(int id)
+         {
+             try
+@@ -211,7 +214,7 @@
+             }
+         }
+ 
+-    //    [IWSAuthorize(new[] { SystemObject.AccountabilityTemplate }, new[] { ActionType.Modify })]
++        //    [IWSAuthorize(new[] { SystemObject.AccountabilityTemplate }, new[] { ActionType.Modify })]
+         public JsonResult DuplicateTemplate(int id)
+         {
+             try
+@@ -221,7 +224,7 @@
+                 var template = _accountabiltyFacade.DuplicateTemplate(providerId, operatorId, id);
+                 TemplateModel tm = TemplateModel.FromTemplate(template, true);
+                 tm.ProcessSectionModel.EventPlaceholderList = _placeholderFacade.GetEventPlaceholders(template.Locale.LocaleCode).ToList();
+-      
++
+                 return Json(new { Success = true, Messages = "Error", Data = tm });
+             }
+             catch (Exception ex)
+@@ -231,7 +234,7 @@
+             }
+         }
+ 
+-     //   [IWSAuthorize(new[] { SystemObject.AccountabilityTemplate }, new[] { ActionType.Modify })]
++        //   [IWSAuthorize(new[] { SystemObject.AccountabilityTemplate }, new[] { ActionType.Modify })]
+         public JsonResult SaveTemplate(TemplateModel template)
+         {
+             try
+@@ -268,7 +271,7 @@
+             }
+         }
+ 
+-    //    [IWSAuthorize(new[] { SystemObject.AccountabilityTemplate }, new[] { ActionType.Modify })]
++        //    [IWSAuthorize(new[] { SystemObject.AccountabilityTemplate }, new[] { ActionType.Modify })]
+         public JsonResult RemoveTemplate(List<int> ids)
+         {
+             try
+@@ -290,7 +293,7 @@
+             }
+         }
+ 
+-    //    [IWSAuthorize(new[] { SystemObject.AccountabilityEvent }, new[] { ActionType.Modify })]
++        //    [IWSAuthorize(new[] { SystemObject.AccountabilityEvent }, new[] { ActionType.Modify })]
+         public JsonResult RemoveEvent(List<int> ids)
+         {
+             try
+@@ -316,7 +319,7 @@
+ 
+         #region Events
+ 
+-     //   [IWSAuthorize(new[] { SystemObject.AccountabilityEvent }, new[] { ActionType.View })]
++        //   [IWSAuthorize(new[] { SystemObject.AccountabilityEvent }, new[] { ActionType.View })]
+         public ActionResult Events(int id = 0, bool showNewDialog = false)
+         {
+             if (!RuntimeContext.Provider.FeatureMatrix.IsAccountabilitySupported)
+@@ -352,7 +355,7 @@
+         }
+ 
+ 
+-     //   [IWSAuthorize(new[] { SystemObject.AccountabilityEvent }, new[] { ActionType.Publish })]
++        //   [IWSAuthorize(new[] { SystemObject.AccountabilityEvent }, new[] { ActionType.Publish })]
+         public ActionResult NewEvent()
+         {
+             return Events(showNewDialog: true);
+@@ -359,7 +362,7 @@
+         }
+ 
+ 
+-    //    [IWSAuthorize(new[] { SystemObject.AccountabilityEvent }, new[] { ActionType.View })]
++        //    [IWSAuthorize(new[] { SystemObject.AccountabilityEvent }, new[] { ActionType.View })]
+         public JsonResult GetEvents(AccountabilityEventSpec spec)
+         {
+             try
+@@ -370,7 +373,7 @@
+                 spec.OperatorId = operatorId;
+                 spec.IncludeReminderAlertDetails = false;
+                 spec.IncludeEventStatistics = true;
+-                
++
+                 var events = _accountabiltyFacade.GetEvents(spec);
+ 
+                 if (events == null)
+@@ -394,7 +397,7 @@
+             }
+         }
+ 
+-       // [IWSAuthorize(new[] { SystemObject.AccountabilityEvent }, new[] { ActionType.View })]
++        // [IWSAuthorize(new[] { SystemObject.AccountabilityEvent }, new[] { ActionType.View })]
+         public JsonResult GetEvent(int id)
+         {
+             try
+@@ -441,7 +444,7 @@
+             }
+         }
+ 
+-       // [IWSAuthorize(new[] { SystemObject.AccountabilityEvent }, new[] { ActionType.Publish })]
++        // [IWSAuthorize(new[] { SystemObject.AccountabilityEvent }, new[] { ActionType.Publish })]
+         public ActionResult StartEvent(int id)
+         {
+             var provider = RuntimeContext.Provider;
+@@ -544,7 +547,7 @@
+             return Json(new JsonResponseModel(true, model));
+         }
+ 
+-       // [IWSAuthorize(new[] { SystemObject.AccountabilityEvent }, new[] { ActionType.View })]
++        // [IWSAuthorize(new[] { SystemObject.AccountabilityEvent }, new[] { ActionType.View })]
+         public JsonResult GetHeirarchyBreakdown(int id, int entityId = 0)
+         {
+             var now = DateTime.UtcNow;
+@@ -627,7 +630,12 @@
+           string searchFlow = null,
+           int eventId = 0,
+           int responseType = -1,
+-          int hierarchyId = -1
++          int hierarchyId = -1,
++          string queryCriteria = null,
++          string staticQueryCriteria = null,
++          int[] attributeValueIds = null,
++          int[] attributeIds = null,
++          int[] listItemIds = null
+           )
+         {
+             var providerId = RuntimeContext.ProviderId;
+@@ -660,7 +668,7 @@
+                     break;
+             }
+ 
+-            var paDefaultColumnsList = new List<string> { AttributeCommonNames.StatusId, AttributeCommonNames.UpdatedBy, AttributeCommonNames.UpdatedOn, AttributeCommonNames.Comments };
++            var paDefaultColumnsList = new List<string> { AttributeCommonNames.StatusId, AttributeCommonNames.UpdatedBy, AttributeCommonNames.UpdatedOn, AttributeCommonNames.Comments, AttributeCommonNames.UpdatedFrom };
+             if (paDefaultColumnsList.Contains(sortBy))
+                 sortBy = "PAEVENT:" + sortBy;
+ 
+@@ -862,9 +870,16 @@
+                 }
+             }
+ 
++            //Sample Data
++            //queryCriteria =
++            //    "[{\"entity\":{\"name\":\"Display Name\",\"dataType\":\"String\",\"dataTypeId\":2,\"commonName\":\"DISPLAYNAME\",\"entityType\":\"ATTRIBUTE\",\"id\":130,\"hierarchyId\":0},\"operand\":1,\"operandName\":\"equals\",\"value\":[{\"id\":-1,\"text\":\"gogula\",\"entityType\":\"ATTRIBUTE\"}]}]";
++            //listItemIds = new int[] { 1717 };
++            //Sample Data
+ 
++             //Advanced and Group search criteria
++            GetAdvancedCriteria(srchArgs, queryCriteria, staticQueryCriteria, attributeValueIds, attributeIds, listItemIds);
++
+             //Get the net result
+-
+             var users = _userFacade.SearchUsersByContext(srchArgs);
+ 
+             // Map Status and Username for the reterive data
+@@ -913,11 +928,115 @@
+ 
+             return result;
+         }
++
++        private void GetAdvancedCriteria(UserSearchArgs srchArgs, string queryCriteria, string staticQueryCriteria, int[] attributeValueIds, int[] attributeIds, int[] listItemIds)
++        {
++            var customCriteriaList = new List<List<GenericCriteria>>();
++            if (!string.IsNullOrEmpty(queryCriteria))
++            {
++                customCriteriaList.Add(InitializeAdvancedSearch(queryCriteria));
++            }
++            if (!string.IsNullOrEmpty(staticQueryCriteria))
++            {
++                customCriteriaList.Add(InitializeAdvancedSearch(staticQueryCriteria));
++            }
++
++            if (customCriteriaList.HasValue())
++            {
++                srchArgs.TargetCriteria = srchArgs.TargetCriteria & UserSearchHelper.GetCustomCriteria(customCriteriaList);
++            }
++
++            // GROUPS
++            var includeGroupsCriteria = GetIncludeGroupsCriteria(attributeValueIds, attributeIds);
++            if (includeGroupsCriteria != null)
++            {
++                srchArgs.TargetCriteria = srchArgs.TargetCriteria & includeGroupsCriteria;
++            }
++
++            // LISTS TO INCLUDE (Dynamic Lists, Static Lists, Tree)
++            if (listItemIds != null)
++            {
++                srchArgs.TargetCriteria = srchArgs.TargetCriteria | UserSearchHelper.GetListCriteria(RuntimeContext.ProviderId, listItemIds);
++            }
++        }
++        private List<GenericCriteria> InitializeAdvancedSearch(string queryCriteria)
++        {
++            var qryCriterion = JsonSerializerService.Deserialize<IEnumerable<Criterion>>(queryCriteria);
++
++            var advancedCriterion = new List<GenericCriteria>();
++
++            if (qryCriterion != null)
++            {
++                foreach (var qryCriteria in qryCriterion)
++                {
++                    var criteria = new GenericCriteria(qryCriteria.entity.entityType, qryCriteria.entity.id, qryCriteria.operand);
++
++                    switch (qryCriteria.AttributeType)
++                    {
++                        case CustomAttributeDataType.Picklist:
++                        case CustomAttributeDataType.MultiPicklist:
++                        case CustomAttributeDataType.Checkbox:
++                            criteria.Value = (qryCriteria.operand == 11 || qryCriteria.operand == 12)
++                                ? "0"
++                                : ((int[])qryCriteria.Value).Join(",");
++                            break;
++                        case CustomAttributeDataType.Number:
++                        case CustomAttributeDataType.String:
++                        case CustomAttributeDataType.Memo:
++                        case CustomAttributeDataType.Date:
++                        case CustomAttributeDataType.DateTime:
++                        case CustomAttributeDataType.Path:
++                            criteria.Value = ((string[])qryCriteria.Value).Join(",");
++                            break;
++                        case CustomAttributeDataType.GeoLocation:
++                            var fc = new FeatureCollection(qryCriteria.value[0].text);
++                            if (fc.Features != null && fc.Features.Count > 0)
++                            {
++                                foreach (var f in fc.Features)
++                                {
++                                    if (f.Geometry.Type == Map.Geometry.Type.Polygon || f.Geometry.Type == Map.Geometry.Type.MultiPolygon)
++                                    {
++                                        criteria = new AttributeCriteria(qryCriteria.entity.id, qryCriteria.operand, f.Geometry.Wkt);
++                                    }
++                                }
++                            }
++                            break;
++                        case CustomAttributeDataType.AttributeValue:
++                        case CustomAttributeDataType.Device:
++                        case CustomAttributeDataType.Entity:
++                        case CustomAttributeDataType.Object:
++                        case CustomAttributeDataType.Unknown:
++                        default:
++                            throw new Exception("Not Implemented");
++                    }
++
++                    advancedCriterion.Add(criteria);
++                }
++            }
++
++            return advancedCriterion;
++        }
++
++        private ExpressionElement GetIncludeGroupsCriteria(int[] attributeValueIds = null, int[] attributeIds = null)
++        {
++            ExpressionElement includeGroupsCriteria = null;
++            foreach (var attributeId in attributeIds ?? new int[] { })
++            {
++                includeGroupsCriteria = includeGroupsCriteria | UserSearchHelper.GetGroupsCriteria(new[] { new List<GenericCriteria> { new AttributeCriteria(attributeId, CriteriaOperator.IsNotEmpty, 0) } });
++            }
++            var attributesDictionary = _userManagerHelper.GetAttributeIdsByValueIds(attributeValueIds ?? new int[] { });
++            foreach (var attributeId in attributesDictionary.Keys)
++            {
++                includeGroupsCriteria = includeGroupsCriteria | UserSearchHelper.GetGroupsCriteria(new[] { new List<GenericCriteria> { new AttributeCriteria(attributeId, CriteriaOperator.Equals, attributesDictionary[attributeId].Join(",")) } });
++            }
++            return includeGroupsCriteria;
++        }
++
+         public JsonResult UpdateEventUsersStatus(List<int> ids, int attributeId, int valueId, string comments)
+         {
+             try
+             {
+-                var userStatusList = new UserStatusUpdateSpec { UserIds = ids, AttributeId = attributeId, ValueId = valueId, Comments = comments, UpdatedFrom = "Operator"};
++                var userStatusList = new UserStatusUpdateSpec { UserIds = ids, AttributeId = attributeId, ValueId = valueId, Comments = comments, UpdatedFrom = "Operator" };
+                 userStatusList.OperatorId = RuntimeContext.OperatorId;
+                 userStatusList.UpdatedBy = RuntimeContext.OperatorId;
+                 var success = _accountabiltyFacade.UpdateUsersStatus(userStatusList, RuntimeContext.ProviderId, RuntimeContext.Provider.BaseLocale);
+@@ -948,7 +1067,7 @@
+         [HttpPost]
+         [FileDownloadCookie]
+         [RenderAsPDF(AutoConvert = false)]
+-       // [IWSAuthorize(new[] { SystemObject.AccountabilityEvent }, new[] { ActionType.View })]
++        // [IWSAuthorize(new[] { SystemObject.AccountabilityEvent }, new[] { ActionType.View })]
+         public ActionResult ExportEventDetails(int eventId)
+         {
+             var eventDetails = GetEvent(eventId);
+@@ -980,26 +1099,26 @@
+                 var scenarioList = _scenarioFacade.GetScenarios(providerId, operatorId, spec);
+                 var data = scenarioList.Select(s =>
+                     new Scenario
+-                                {
+-                                    ScenarioId = s.ScenarioId,
+-                                    Name = s.Name.TruncateText(),
+-                                    ChannelName = s.ChannelName.TruncateText(),
+-                                    PublishedOn = s.PublishedOn,
+-                                    PublishedOnString = RuntimeContext.Provider.SystemToVpsDateTimeFormated(s.PublishedOn),
+-                                    DateTimeFormat = RuntimeContext.Provider.GetDateTimeFormat(),
+-                                    NextRecurrence = s.NextRecurrence,
+-                                    NextRecurrenceString = (s.IsRecurringScenario) ? RuntimeContext.Provider.SystemToVpsDateTimeFormated(s.NextRecurrence) : string.Empty,
+-                                    UpdatedBy = s.UpdatedBy,
+-                                    IsQuickPublish = s.IsQuickPublish,
+-                                    IsReadyForPublish = s.IsReadyForPublish,
+-                                    IsDefaultforNewAlert = s.IsDefaultforNewAlert,
+-                                    IsDefaultforNewScenario = s.IsDefaultforNewScenario,
+-                                    IsSystem = _scenarioFacade.IsSystemScenario(s.CommonName),
+-                                    IsRecurringScenario = s.IsRecurringScenario,
+-                                    Description = s.Description.TruncateText(),
+-                                    AlertTitle = s.AlertTitle.TruncateText(),
+-                                    AlertBody = s.AlertBody.TruncateText()
+-                                });
++                    {
++                        ScenarioId = s.ScenarioId,
++                        Name = s.Name.TruncateText(),
++                        ChannelName = s.ChannelName.TruncateText(),
++                        PublishedOn = s.PublishedOn,
++                        PublishedOnString = RuntimeContext.Provider.SystemToVpsDateTimeFormated(s.PublishedOn),
++                        DateTimeFormat = RuntimeContext.Provider.GetDateTimeFormat(),
++                        NextRecurrence = s.NextRecurrence,
++                        NextRecurrenceString = (s.IsRecurringScenario) ? RuntimeContext.Provider.SystemToVpsDateTimeFormated(s.NextRecurrence) : string.Empty,
++                        UpdatedBy = s.UpdatedBy,
++                        IsQuickPublish = s.IsQuickPublish,
++                        IsReadyForPublish = s.IsReadyForPublish,
++                        IsDefaultforNewAlert = s.IsDefaultforNewAlert,
++                        IsDefaultforNewScenario = s.IsDefaultforNewScenario,
++                        IsSystem = _scenarioFacade.IsSystemScenario(s.CommonName),
++                        IsRecurringScenario = s.IsRecurringScenario,
++                        Description = s.Description.TruncateText(),
++                        AlertTitle = s.AlertTitle.TruncateText(),
++                        AlertBody = s.AlertBody.TruncateText()
++                    });
+ 
+                 data = data.Where(s => !s.IsSystem && s.IsReadyForPublish).OrderBy(s => s.Name);
+                 return Json(new { Success = true, Data = data });
+Index: Scripts/Account/Event/users.js
+===================================================================
+--- Scripts/Account/Event/users.js	(revision 119675)
++++ Scripts/Account/Event/users.js	(working copy)
+@@ -21,7 +21,9 @@
+             resourceStrings: userListResources,
+             Urls: userListUrls,
+             width: '100%',
+-            eventId: id
++            eventId: id,
++            groupRefNode: this.refDomNode.find('.group-search-popup-container'),
++            queryRefNode: this.refDomNode.find('.query-search-popup-container'),
+         }
+ 
+         this.ph = new UserList(options, UserInfo, this);
+@@ -30,6 +32,8 @@
+         this.ph.on("ready", function () {
+ 
+         });
++        this.queryCriteria = [];
++        this.listItemIds = [];
+     };
+ 
+     $.extend(usersView.prototype, {
+@@ -53,6 +57,44 @@
+ 
+             this.dialog.setBodyNode(this.refDomNode.find('.change-status-dlg-content'));
+             this.dialog.setTitleNode(this.refDomNode.find('.change-status-dlg-title'));
++
++            $(this.ph.queryRefNode).athocEntitySelectorPopup({
++                i18n: userListResources,
++                title: userListResources.AtHoc_User_Search_Create_Conditions,
++                cdnUrl: userListUrls.cdnUrl,
++                startTabIndex: 10000,
++                dateFormat: $.vpsDateFormat,
++                dateTimeFormat: $.vpsDateTimeFormat,
++                utcOffsetInMinutes: $.vpsTimeZone.UtcOffsetInMinutes,
++                vpsOffsetFromSystemInMinutes: $.vpsTimeZone.VPSOffsetFromSystemInMinutes,
++                selectorToClickToLaunch: ".advanced-search-open",
++                widgetName: "athocQueryBuilder",
++                hideGeolocation: true,
++                hierarchySelectorTagId: $(".hierarchy-selector-popup-container", this.refDomNode),
++                setPreselections: function () {
++                    //return $("#divSearch").find(".table-crown-search").athocUserSearch('getCurrentQueryCriteria');
++                },
++                onApplyClick: function (selections) {
++                    //$("#divSearch").find(".table-crown-search").athocUserSearch('selectMultiple', selections);
++                    self.renderpills(selections, false);
++                }
++            });
++            $(this.ph.groupRefNode).athocEntitySelectorPopup({
++                i18n: userListResources,
++                title: "Select Groups",
++                cdnUrl: userListUrls.cdnUrl,
++                startTabIndex: 1000,
++                selectorToClickToLaunch: ".btn-groups",
++                showSummary: true,
++                removeEmptyFolder: true,
++                setPreselections: function () {
++                    //return $("#divAllUsers").find(".table-crown-search").athocUserSearch('getCurrentGroups');
++                },
++                onApplyClick: function (selections) {
++                    // $("#divAllUsers").find(".table-crown-search").athocUserSearch('selectMultiple', selections);
++                    self.renderpills(selections, true);
++                }
++            });
+         },
+ 
+         update: function (data) {
+@@ -69,7 +111,43 @@
+             this.model.filterStr(JSON.stringify(filter));
+             this.ph.changeStatus(filter);
+         },
++        renderpills: function (selections, isGroup) {
++            var self = this;
++            if (selections["selections"].length > 0) {
++                if (isGroup) {
++                    selections["selections"].forEach(function (selecteditem) {
++                        //self.listItemIds.push(selecteditem.value);
++                        self.ph.listItemIds.push(selecteditem.value);
++                        self.ph.createPills(selecteditem.value, selecteditem.type, selecteditem.display);
++                    });
++                }
++                else {
++                    var query = "";
++                    selections["selections"].forEach(function (selecteditem) {
++                        var selectedValues = [];
++                        if (selecteditem.value.length > 0) {
++                            self.queryCriteria.push(selecteditem);
++                            selecteditem.value.forEach(function (selectedvalue) {
++                                selectedValues.push(selectedvalue.text);
++                            });
++                        }
++                        else
++                            selectedValues.push(selecteditem.value);
+ 
++                        if (query != "")
++                            query = query + " AND " + selecteditem.entity.commonName + " " + selecteditem.operandName + " " + (selectedValues.length > 1 ? selectedValues.join(" OR ") : selectedValues.toString());
++                        else
++                            query = selecteditem.entity.commonName + " " + selecteditem.operandName + " " + (selectedValues.length > 1 ? selectedValues.join(" OR ") : selectedValues.toString());
++
++                    });
++                    self.ph.queryCriteria = JSON.stringify(self.queryCriteria);
++                    self.ph.createPills("", "ADVANCESEARCH", query);
++                }
++            }
++
++            
++           
++        },
+         //Gets the selected filter to the Export Dailog
+         selectedFilter: function () {
+             var self = this;
+Index: Scripts/Account/Event/users/template.html
+===================================================================
+--- Scripts/Account/Event/users/template.html	(revision 119675)
++++ Scripts/Account/Event/users/template.html	(working copy)
+@@ -3,7 +3,15 @@
+         <div class="user-listing" style="width: 900px; "></div>
+     </div>
+ </div>
+-
++<div class="group-search-popup-container">
++    
++</div>
++<div class="query-search-popup-container">
++    
++</div>
++<div class="hierarchy-selector-popup-container">
++    
++</div>
+ <!--dialog elements-->
+     <span class="change-status-dlg-title"><span data-bind="text: i18n.PAEvent_ChangeStatus_ModalTitle"></span>&nbsp;<span data-bind="text:userCount"></span></span>
+     <div class="change-status-dlg-content">
+@@ -36,3 +44,13 @@
+         </div>
+     </script>
+ 
++<style>
++     #groupSelectorContent {
++         width:900px;
++         top:30%;
++    }
++
++     #criteriaContainer .query-row {
++         width: 860px !important;
++    }
++</style>
+\ No newline at end of file
+Index: Scripts/Publishing/UserList/UserList.js
+===================================================================
+--- Scripts/Publishing/UserList/UserList.js	(revision 119675)
++++ Scripts/Publishing/UserList/UserList.js	(working copy)
+@@ -52,6 +52,8 @@
+             self.responseId = "";
+             self.comments = "";
+             self.eventStatus = options.eventStatus;
++            self.queryCriteria = "";
++            self.listItemIds = [];
+         },
+         // To initiate component
+         startUp: function () {
+@@ -122,6 +124,8 @@
+                 displayColumnDeviceIds: displayIds,
+                 responseType: self.filterType,
+                 hierarchyId: self.hierarchyId,
++                queryCriteria: this.queryCriteria,
++                listItemIds: this.listItemIds
+                
+             };
+             this.gridColumnDefinitions = [];
+Index: Scripts/Publishing/UserList/UserListTemplate.html
+===================================================================
+--- Scripts/Publishing/UserList/UserListTemplate.html	(revision 119675)
++++ Scripts/Publishing/UserList/UserListTemplate.html	(working copy)
+@@ -4,9 +4,10 @@
+     <div class="mar-bot10">
+         <div class="table-crown-center" style="width:auto!important;height:auto!important;" id="divAllUsers">
+             <div class="table-crown-search no-pills" id="divSearch">
+-
+-                <div class="input-append filter-col">
++                <div class="float-left">
+                     <input type="text" style="border-right: solid 1px #BFBFBF" class="filter-search-input" placeholder="User Name" id="txtAllUserSearch" tabindex="1">
++                    <span title="Select Groups" class="btn-groups btn btn-info"><span class="icon-add-groups"></span></span>
++                    <a title="Advanced" class="advanced-search-open">Advanced</a>
+                     <div id="divProgress" style="margin-left:200%;margin-bottom:10px;font-size: 14px;"></div>
+                     <div class="filter-element" id="filterTypes">
+                         <div class="table-crown-caption">
+@@ -21,18 +22,12 @@
+                                     <div class="dropdown-selection-wrap lang-list" id="rTypes">
+                                     </div>
+                                 </div>
+-                               
++
+                                 <!--END conditional panel-->
+                             </span>
+                         </div>
+-
+-                    </div>                   
+-
+-                 
+-
+-                   
++                    </div>
+                 </div>
+-
+                 <div class="filter-col filter-col-last">
+                     <div class="filter-element mar-top-neg2 text-right"><button disabled id="btn_userSearch" type="button" class="btn btn-large btn-primary" tabindex="3">Search</button></div>
+                     <div class="filter-element mar-top-neg2">
+@@ -78,16 +73,17 @@
+         #if({2} == 1 || {2} == 2){#
+         <input name="txtUser" id="allUserList-Text-#= Id #" value="#={0}#" type="text" data-type="text" title="#={1}#" style="width:100%" />
+         #} else if({2}==6 || {2}==7){#
+-        <select name="ddUser" id="allUserList-dd-#= Id #" style="width:93%;height:95%" >
++        <select name="ddUser" id="allUserList-dd-#= Id #" style="width:93%;height:95%">
+             <option>One</option>
+             <option>Two</option>
+             <option>Three</option>
+         </select>
+         #} else if({2}==8){#
+-        <input name="chUserBox" id="allUserList-chbox-#= Id #" value="#= Id #" type="checkbox" data-type="checkbox" class="chkClass" title="#={0}#" #= {0}=="Yes" ? checked='checked': '' # />
+-        #} else if({2}==9){#        
+-        <a id="allUserList-Block-#= Id #" value="#= Id #"  title="#={1}#">#={0}#</a>
+-        #} else {#        
++        <input name="chUserBox" id="allUserList-chbox-#= Id #" value="#= Id #" type="checkbox" data-type="checkbox" class="chkClass" title="#={0}#" #={0} = ="Yes" ? checked='checked'
++               '' # />
++        #} else if({2}==9){#
++        <a id="allUserList-Block-#= Id #" value="#= Id #" title="#={1}#">#={0}#</a>
++        #} else {#
+         <span title="#={0}#">#={1}#</span>
+         #}#
+     </script>
+@@ -95,11 +91,11 @@
+     <script id="userList-chkAll-template" type="text/x-kendo-template">
+         <input name="usersCheckAll" id="usersCheckAll" value="0" type="checkbox" title="Select/Deselect" data-type="selectAll" />
+     </script>
+-    
++
+     <script id="userList-link-template" type="text/x-kendo-template">
+         <a id="allUserList-link-#= Id #" value="#= Id #" onclick="javascript:athoc.iws.publishing.iut.getUserInfo(this);">#=_LOGIN_ID#</a>
+     </script>
+-                  
++
+     <!-- Reset all user message-->
+     <div class="modal hide fade in" id="dialogResetAllUsers" aria-hidden="false" data-backdrop="static">
+         <div class="modal-header">
+@@ -123,20 +119,21 @@
+ 
+     <style>
+         .k-grid-header {
+-    border: none !important;
+-    border-left: solid #dbdbdb 1px !important;
+-}
+-            .cond-panel-wrap.end-user-filter {
+-                position:fixed;
+-            }
++            border: none !important;
++            border-left: solid #dbdbdb 1px !important;
++        }
+ 
+-           .search-settings .caret {
+-               margin-top:2px;
+-            }
+-            .dropdown-selection-wrap select {
+-                border:0px;
+-            }
+-          
++        .cond-panel-wrap.end-user-filter {
++            position: fixed;
++        }
++
++        .search-settings .caret {
++            margin-top: 2px;
++        }
++
++        .dropdown-selection-wrap select {
++            border: 0px;
++        }
+     </style>
+ 
+ </div>
+\ No newline at end of file
+Index: Views/Account/_CommonScripts.cshtml
+===================================================================
+--- Views/Account/_CommonScripts.cshtml	(revision 119675)
++++ Views/Account/_CommonScripts.cshtml	(working copy)
+@@ -1,63 +1,64 @@
+ ﻿@using AtHoc.Infrastructure.Configurations
+ 
+-    @Html.CdnScript("Scripts/lib/ajax-loader.js")
+-    @Html.CdnCss("Content/css/rule-manager-custom.css")
+-    @*knockout-repeat provide a fix for IE9 issue with the query builder*@
+-    @Html.CdnCss("Content/css-vendor/kendo.common.min.css")
+-    @Html.CdnCss("Content/css-vendor/kendo.uniform.min.css")
+-    @*@Html.CdnScript("Scripts/lib-vendor/kendo/kendo.all.js")*@
+-    @Html.CdnScript("scripts/lib/athoc.kendoGrid.utils.js")
+-    @Html.CdnScript("scripts/lib-vendor/knockout-repeat.js")
+-    @Html.CdnScript("scripts/lib-vendor/jquery.fileupload.js")
+-    @Html.CdnScript("scripts/lib-vendor/jquery.filedownload.js")
+-    @Html.CdnScript("scripts/app/services/dataservice.js")
++@Html.CdnScript("Scripts/lib/ajax-loader.js")
++@Html.CdnCss("Content/css/rule-manager-custom.css")
++@*knockout-repeat provide a fix for IE9 issue with the query builder*@
++@Html.CdnCss("Content/css-vendor/kendo.common.min.css")
++@Html.CdnCss("Content/css-vendor/kendo.uniform.min.css")
++@*@Html.CdnScript("Scripts/lib-vendor/kendo/kendo.all.js")*@
++@Html.CdnScript("scripts/lib/athoc.kendoGrid.utils.js")
++@Html.CdnScript("scripts/lib-vendor/knockout-repeat.js")
++@Html.CdnScript("scripts/lib-vendor/jquery.fileupload.js")
++@Html.CdnScript("scripts/lib-vendor/jquery.filedownload.js")
++@Html.CdnScript("scripts/app/services/dataservice.js")
+ 
+-    @*below js are required for querybuilder*@
+-    @Html.CdnScript("scripts/lib/querybuilder.js")
+-    @Html.CdnScript("scripts/app/viewmodels/athoc.iws.querycriteria.js")
+-    @Html.CdnScript("Scripts/app/athoc.iws.queryBuilderExtensions.js")
+-    @Html.CdnScript("Scripts/lib/entity-selector-popup.js")
+-    @Html.CdnScript("Scripts/lib/groupselector.js")
++@*below js are required for querybuilder*@
++@Html.CdnScript("scripts/lib/querybuilder.js")
++@Html.CdnScript("scripts/app/viewmodels/athoc.iws.querycriteria.js")
++@Html.CdnScript("Scripts/app/athoc.iws.queryBuilderExtensions.js")
++@Html.CdnScript("Scripts/lib/entity-selector-popup.js")
++@Html.CdnScript("Scripts/lib/groupselector.js")
++@Html.CdnScript("Scripts/lib/usersearch.js")
+ 
+-    @Html.CdnCss("Content/css-vendor/kendo.rtl.min.css")
+-    @Html.CdnCss("Content/css/publishing-custom.css")
+-    @Html.CdnCss("Content/css/print-custom.css")
+-    @Html.CdnCss("Content/css-vendor/bootstrap-multiselect.css")
++@Html.CdnCss("Content/css-vendor/kendo.rtl.min.css")
++@Html.CdnCss("Content/css/publishing-custom.css")
++@Html.CdnCss("Content/css/print-custom.css")
++@Html.CdnCss("Content/css-vendor/bootstrap-multiselect.css")
+ 
+ 
+-    @*Geo-targeting scripts*@
+-    @Html.CdnCss("Content/css/publishermap.css")
+-    @Html.CdnScript("scripts/app/dojoConfig.js")
+-    @Html.CdnCss("scripts/lib-vendor/esri/javascript/dijit/themes/tundra/tundra.css")
+-    @Html.CdnCss("scripts/lib-vendor/esri/javascript/esri/css/esri.css")
+-    @Html.CdnCss("scripts/lib-vendor/esri/javascript/esri/css/esri2.css")
+-    @Html.CdnScript("scripts/lib-vendor/esri/javascript/init.js")
+-    @Html.CdnCss("Content/css/location-map.css")
++@*Geo-targeting scripts*@
++@Html.CdnCss("Content/css/publishermap.css")
++@Html.CdnScript("scripts/app/dojoConfig.js")
++@Html.CdnCss("scripts/lib-vendor/esri/javascript/dijit/themes/tundra/tundra.css")
++@Html.CdnCss("scripts/lib-vendor/esri/javascript/esri/css/esri.css")
++@Html.CdnCss("scripts/lib-vendor/esri/javascript/esri/css/esri2.css")
++@Html.CdnScript("scripts/lib-vendor/esri/javascript/init.js")
++@Html.CdnCss("Content/css/location-map.css")
+ 
+ <script src="~/Scripts/Publishing/athoc.iws.alert.js?v=@ConfigService.Current.Version"></script>
+ <script src="~/Scripts/Publishing/athoc.iws.alert.detail.js?v=@ConfigService.Current.Version"></script>
+ 
+ @*<script src="~/Scripts/Publishing/publishing-bundle.min.js?v=@ConfigService.Current.Version"></script>*@
+-    @*// content of publishing-bundle: *@
+-    <script src="~/Scripts/Publishing/athoc.iws.publishing.js?v=@ConfigService.Current.Version"></script>
++@*// content of publishing-bundle: *@
++<script src="~/Scripts/Publishing/athoc.iws.publishing.js?v=@ConfigService.Current.Version"></script>
+ 
+-    <script src="~/Scripts/Publishing/athoc.iws.publishing.detail.js?v=@ConfigService.Current.Version"></script>
+-    <script src="~/Scripts/Publishing/athoc.iws.publishing.scenario.js?v=@ConfigService.Current.Version"></script>
+-    <script src="~/Scripts/Publishing/athoc.iws.publishing.content.js?v=@ConfigService.Current.Version"></script>
+-    <script src="~/Scripts/Publishing/athoc.iws.publishing.targetUsers.js?v=@ConfigService.Current.Version"></script>
+-    <script src="~/Scripts/Publishing/athoc.iws.publishing.targetGroup.js?v=@ConfigService.Current.Version"></script>
+-    <script src="~/Scripts/Publishing/athoc.iws.publishing.targetOrg.js?v=@ConfigService.Current.Version"></script>
+-    <script src="~/Scripts/Publishing/athoc.iws.publishing.view.js?v=@ConfigService.Current.Version"></script>
+-    <script src="~/Scripts/Publishing/athoc.iws.publishing.geo.js?v=@ConfigService.Current.Version"></script>
+-    <script src="~/Scripts/Publishing/athoc.iws.alert.schedule.js?v=@ConfigService.Current.Version"></script>
+-    <script src="~/Scripts/Publishing/athoc.iws.publishing.massDevices.js?v=@ConfigService.Current.Version"></script>
+-    <script src="~/Scripts/Publishing/athoc.iws.alert.reviewandpublish.js?v=@ConfigService.Current.Version"></script>
+-    <script src="~/Scripts/Publishing/athoc.iws.publishing.iut.js?v=@ConfigService.Current.Version"></script>
+-    <script src="~/Scripts/Publishing/athoc.iws.publishing.fillcount.js?v=@ConfigService.Current.Version"></script>
+-    <script src="~/Scripts/Publishing/athoc.iws.publishing.deviceOptions.js?v=@ConfigService.Current.Version"></script>
+-    <script src="~/Scripts/Publishing/athoc.iws.scenario.settings.js?v=@ConfigService.Current.Version"></script>
+-    @Html.CdnScript("Scripts/lib/ExtensionToolbox.js");
+-    @*// END content of publishing-bundle: *@
++<script src="~/Scripts/Publishing/athoc.iws.publishing.detail.js?v=@ConfigService.Current.Version"></script>
++<script src="~/Scripts/Publishing/athoc.iws.publishing.scenario.js?v=@ConfigService.Current.Version"></script>
++<script src="~/Scripts/Publishing/athoc.iws.publishing.content.js?v=@ConfigService.Current.Version"></script>
++<script src="~/Scripts/Publishing/athoc.iws.publishing.targetUsers.js?v=@ConfigService.Current.Version"></script>
++<script src="~/Scripts/Publishing/athoc.iws.publishing.targetGroup.js?v=@ConfigService.Current.Version"></script>
++<script src="~/Scripts/Publishing/athoc.iws.publishing.targetOrg.js?v=@ConfigService.Current.Version"></script>
++<script src="~/Scripts/Publishing/athoc.iws.publishing.view.js?v=@ConfigService.Current.Version"></script>
++<script src="~/Scripts/Publishing/athoc.iws.publishing.geo.js?v=@ConfigService.Current.Version"></script>
++<script src="~/Scripts/Publishing/athoc.iws.alert.schedule.js?v=@ConfigService.Current.Version"></script>
++<script src="~/Scripts/Publishing/athoc.iws.publishing.massDevices.js?v=@ConfigService.Current.Version"></script>
++<script src="~/Scripts/Publishing/athoc.iws.alert.reviewandpublish.js?v=@ConfigService.Current.Version"></script>
++<script src="~/Scripts/Publishing/athoc.iws.publishing.iut.js?v=@ConfigService.Current.Version"></script>
++<script src="~/Scripts/Publishing/athoc.iws.publishing.fillcount.js?v=@ConfigService.Current.Version"></script>
++<script src="~/Scripts/Publishing/athoc.iws.publishing.deviceOptions.js?v=@ConfigService.Current.Version"></script>
++<script src="~/Scripts/Publishing/athoc.iws.scenario.settings.js?v=@ConfigService.Current.Version"></script>
++@Html.CdnScript("Scripts/lib/ExtensionToolbox.js");
++@*// END content of publishing-bundle: *@
+ 
+ <script>
+     athoc.iws = athoc.iws || {};
+Index: Views/Account/EventDetails.cshtml
+===================================================================
+--- Views/Account/EventDetails.cshtml	(revision 119675)
++++ Views/Account/EventDetails.cshtml	(working copy)
+@@ -92,7 +92,7 @@
+         };
+         //todo: find a better way 
+ 
+-        userListResources =  @Html.ResourceStrings("Publishing_|Unsaved_Data_Text|AtHoc_|Action_|KO_|Bread|General_|IUTAllUsers_|IUTAllUser_|PAEvent_", IWSResources.ResourceManager);
++    userListResources =  @Html.ResourceStrings("Publishing_|Unsaved_Data_Text|AtHoc_|Action_|KO_|Bread|General_|IUTAllUsers_|IUTAllUser_|PAEvent_|^AtHoc_User_Search|^User_Criteria_Builder_", IWSResources.ResourceManager);
+ 
+ 
+         $(function() {
